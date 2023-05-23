@@ -1,0 +1,63 @@
+---
+- name: Setup Ubuntu Server
+  hosts: all
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Node.js and NPM
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - nodejs
+        - npm
+
+    - name: Add Datadog APT GPG key
+      apt_key:
+        url: https://keys.datadoghq.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Add Datadog APT repository
+      apt_repository:
+        repo: "deb https://apt.datadoghq.com/ stable main"
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Datadog Agent
+      apt:
+        name: datadog-agent
+        state: latest
+
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+
+    - name: Create web HTML files
+      template:
+        src: "{{ item.src }}"
+        dest: "/etc/nginx/sites-available/{{ item.filename }}"
+      with_items:
+        - { src: "./first_web_file.html", filename: "first_web_file" }
+        - { src: "./second_web_file.html", filename: "second_web_file" }
+
+    - name: Enable NGINX sites
+      file:
+        src: "/etc/nginx/sites-available/{{ item }}"
+        dest: "/etc/nginx/sites-enabled/{{ item }}"
+        state: link
+      with_items:
+        - first_web_file
+        - second_web_file
+
+    - name: Restart NGINX
+      service:
+        name: nginx
+        state: restarted
