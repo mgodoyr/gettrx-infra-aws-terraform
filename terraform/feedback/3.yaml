@@ -1,0 +1,19 @@
+- name: Add NGINX configuration
+  template:
+    src: ./3.j2
+    dest: /etc/nginx/sites-available/default
+    mode: '0644'
+  vars:
+    server_name: example.com
+    proxy_address: localhost:3000
+
+- name: Enable NGINX site
+  file:
+    src: "/etc/nginx/sites-available/default"
+    dest: "/etc/nginx/sites-enabled/default"
+    state: link
+
+- name: Restart NGINX
+  service:
+    name: nginx
+    state: restarted
